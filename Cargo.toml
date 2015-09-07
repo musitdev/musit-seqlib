@@ -1,0 +1,7 @@
+[package]
+name = "musitseq"
+version = "0.1.0"
+authors = ["pdelrieu"]
+
+[dependencies]
+time = "0.1"
