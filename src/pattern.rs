@@ -1,3 +1,5 @@
 //! Module: musitrt
 
-pub mod engine;
+pub struct Pattern	{
+	pub id: String,
+}

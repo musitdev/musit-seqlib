@@ -1,6 +1,8 @@
 extern crate time;
 
 mod sequencer;
+mod pattern;
+mod note;
 
 use std::sync::mpsc::{channel, Sender, Receiver};
 use std::thread;
@@ -13,4 +15,6 @@ fn main() {
     thread::spawn(move|| {
 	    sequencer_process(rx);
 	});
+
+	thread::sleep_ms(10000);
 }
