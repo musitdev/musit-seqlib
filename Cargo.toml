@@ -3,5 +3,12 @@ name = "musitseq"
 version = "0.1.0"
 authors = ["pdelrieu"]
 
+[dependencies.comm]
+git = "https://github.com/mahkoh/comm"
+
 [dependencies]
 time = "0.1"
+midi = "*"
+portmidi = "*"
+#comm = "*"
+

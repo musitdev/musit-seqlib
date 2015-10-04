@@ -1,4 +1,7 @@
-pub struct Note {
+use midi::Message;
+
+
+pub struct Event {
 	pub ts: u64,
-	pub value: usize,
+	pub message: Message,
 }
