@@ -6,6 +6,9 @@ authors = ["pdelrieu"]
 [dependencies.comm]
 git = "https://github.com/mahkoh/comm"
 
+#[dependencies.portmidi]
+#path = '../temp/portmidi-rs'
+
 [dependencies]
 time = "0.1"
 midi = "*"

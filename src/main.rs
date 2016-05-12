@@ -10,7 +10,7 @@ mod device;
 mod process;
 mod filter;
 
-use portmidi::{initialize, count_devices, get_device_info, terminate, OutputPort, MidiMessage,MidiEvent};
+use portmidi::{PortMidi, OutputPort, MidiMessage, MidiEvent, DeviceInfo};
 
 use std::sync::mpsc::{channel, Sender, Receiver};
 use std::thread;
@@ -21,13 +21,13 @@ use pattern::PatternCommand;
 
 fn main() {
 
-    portmidi::initialize().unwrap();
-    let no = portmidi::count_devices();
+    let portmidi = PortMidi::new().ok().expect("Can't init port midi");
+    let no = portmidi.device_count();
     // use filter_map to discard None, and unwrap the Some(_)
-    let devices = (0..no).filter_map(|i| portmidi::get_device_info(i)).collect::<Vec<_>>();
+    let devices = portmidi.devices().ok().expect("Can't get device info");;
     for d in devices.into_iter() {
-        println!("{:<3} {:<20} {:<6} {:<6}", d.device_id, d.name, d.input, d.output);
-    }   
+        println!("{:<3} {:<20} {:<6} {:<6}", d.id(), d.name(), d.is_input(), d.is_output());
+    }
 
 	let (tx, rx): (Sender<MusitCommand>, Receiver<MusitCommand>) = channel();
 
@@ -47,8 +47,8 @@ fn main() {
 	thread::sleep_ms(100);
 
     thread::spawn(move|| {
-		let mut output = OutputPort::new(0, 1024);
-		output.open().unwrap();
+    	let device_info = DeviceInfo::new(0).unwrap();
+		let mut output = OutputPort::new(device_info, 1024).unwrap();
     	loop {
 			match output.write_message(MidiMessage{status: 129, data1: 64, data2: 0,})	{
 				Ok(_) => (),
@@ -57,12 +57,10 @@ fn main() {
 			match output.write_message(MidiMessage{status: 129, data1: 59, data2: 0,})	{
 				Ok(_) => (),
 				Err(err) => panic!("error midi send {:?}", err),
-			} 
+			}
 	    	thread::sleep_ms(1000);
     	}
 	});
 
 	thread::sleep_ms(30000);
-
-	portmidi::terminate().unwrap();
 }

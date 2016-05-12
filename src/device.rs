@@ -3,7 +3,7 @@ use std::thread;
 
 use comm::{spmc, Error};
 
-use portmidi::{InputPort, PortMidiDeviceId, PortMidiResult, MidiEvent};
+use portmidi::{self, InputPort, PortMidiDeviceId, MidiEvent, DeviceInfo};
 
 use pattern::Pattern;
 //use midi::{RawMessage, Status};
@@ -120,7 +120,7 @@ pub struct PortMidiInputDevice<'a>	{
 }
 
 impl<'a> PortMidiInputDevice<'a>	{
-	pub fn new(id: DeviceId, portmidi_id: PortMidiDeviceId) -> PortMidiResult<PortMidiInputDevice<'static>>	{
+	pub fn new(id: DeviceId, portmidi_id: PortMidiDeviceId) -> portmidi::Result<PortMidiInputDevice<'static>>	{
 		let (send, recv) = unsafe { spmc::bounded_fast::new(10)};
 	
 		let device = PortMidiInputDevice{id: id, midi_id: portmidi_id, receiver:recv};
@@ -131,14 +131,13 @@ impl<'a> PortMidiInputDevice<'a>	{
 }
 
 
-fn start_read<'a>(device_id: PortMidiDeviceId, sender: spmc::bounded_fast::Producer<'static, MidiEvent>)	{
+fn start_read<'a>(device_id: PortMidiDeviceId, sender: spmc::bounded_fast::Producer<'static, MidiEvent>) -> portmidi::Result<()>	{
 	//let clone_send = sender.clone();
 	//let (send, recv) = unsafe { spmc::bounded_fast::new(10)};
 	thread::spawn(move || {
 		println!("Portmidi open input for port {:?}", device_id);
-		let mut input = InputPort::new(device_id, 1024);
-		input.open().unwrap();
-
+		let device_info = DeviceInfo::new(device_id).unwrap();
+		let mut input = InputPort::new(device_info, 1024).unwrap();
 		println!("Portmidi init ok");
 
 		loop {
@@ -153,6 +152,7 @@ fn start_read<'a>(device_id: PortMidiDeviceId, sender: spmc::bounded_fast::Produ
 	        thread::sleep_ms(10);
 		};
 	});
+	Ok(())
 }
 
 #[cfg(test)]
