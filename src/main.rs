@@ -36,9 +36,10 @@ fn main() {
 	});
 
 	//Create new pattern:
-	tx.send(MusitCommand::PatComm(PatternCommand::NewPattern(1)));
+	tx.send(MusitCommand::PatComm(PatternCommand::NewPattern(1))); //patternid
 	//attach device
-	tx.send(MusitCommand::SeqComm(SeqCommand::CreateMidiInput(1, 1)));
+	tx.send(MusitCommand::SeqComm(SeqCommand::CreateMidiInput(1, 1))); //deviceid, midi id
+	tx.send(MusitCommand::SeqComm(SeqCommand::ConnectPatternToInput(1, 1))); //deviceid, patternid
 
 	tx.send(MusitCommand::SeqComm(SeqCommand::ConnectProcess(1, Box::new(|tick: u64, event: MidiEvent| {println!("event :{:?}", event); Some(event)}))));
 	tx.send(MusitCommand::SeqComm(SeqCommand::ConnectFilter(1, Box::new(|event: &MidiEvent| event.message.data1 > 60))));

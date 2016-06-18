@@ -1,7 +1,8 @@
 use std::sync::mpsc::{Receiver, TryRecvError};
 use portmidi::PortMidiDeviceId;
 use time::precise_time_ns;
-use std::thread::sleep_ms;
+use std::time::Duration;
+use std::thread::sleep;
 use std::collections::HashMap;
 use std::cell::RefCell;
 
@@ -15,7 +16,7 @@ pub enum SeqCommand {
     //create the specified portMidiInput with the specified id
     ConnectProcess(DeviceId, ProcessUnit<MidiEvent>),
     ConnectFilter(DeviceId, FilterUnit<MidiEvent>),
-    ConnectPatternToInput(DeviceId, Vec<PatternId>),
+    ConnectPatternToInput(DeviceId, PatternId),
 }
 
 pub enum MusitCommand {
@@ -24,7 +25,7 @@ pub enum MusitCommand {
 }
 
 pub fn sequencer_process(receiver: Receiver<MusitCommand>) {
-    let wait_time_ns: u64 = 1000; //in microsecond
+    let wait_time_ns: u64 = 1000000; //in nanosecond
     let mut time_ns: u64 = precise_time_ns();
     let mut pattern_list: HashMap<PatternId, RefCell<Pattern>> = HashMap::new();
     let mut pattern_connection_list: HashMap<DeviceId, PatternId> = HashMap::new();
@@ -71,7 +72,18 @@ pub fn sequencer_process(receiver: Receiver<MusitCommand>) {
                                     input.stream().filter::<MidiEvent>(filter);
                                 }
                             },
-                            SeqCommand::ConnectPatternToInput(device_id, pattern_id) => {},
+                            SeqCommand::ConnectPatternToInput(device_id, pattern_id) => {
+                                if let Some(_) = input_device_list.iter().find(|&d| d.id == device_id) {
+                                	if pattern_list.contains_key(&pattern_id) {
+                                    	pattern_connection_list.insert(device_id, pattern_id);
+                                	} else {
+                                		println!("Error ConnectPatternToInput no pattern found for id :{:?}", pattern_id);
+                                	}
+                                } else{
+                                	println!("Error ConnectPatternToInput no device found for id :{:?}", device_id);
+                                }
+
+                            },
 
                         }
                     },
@@ -113,13 +125,15 @@ pub fn sequencer_process(receiver: Receiver<MusitCommand>) {
             }
         }
 
+        //manage pattern output
+
         //manage wait time
         let new_time_ns = precise_time_ns();
         let diff = new_time_ns - time_ns;
         if (diff) < wait_time_ns {
-            let wait = (wait_time_ns - diff) / 1000;
+            let wait = wait_time_ns - diff;
             //println!("wait: {:?}", wait);
-            sleep_ms((wait) as u32);
+            sleep(Duration::new(0, wait as u32));
         }
         time_ns = precise_time_ns();
         //println!("time: {:?}, diff: {:?}", time_ns, diff);
